@@ -16,14 +16,12 @@ os.environ['OPENAI_API_KEY'] = API
 # App framework
 st.title('🔗 Essay Writer Bot Made using Langchain 🦜')
 if API:
-    num_subtitles = st.number_input("Enter the number of subtitles", min_value=1, max_value=20, value=1)
-    
     content_list = []
     
-    # Ingreso de contenido para subtítulos
-    st.write("Enter content for each subtitle:")
-    for i in range(num_subtitles):
-        content = st.text_area(f"Content for Subtitle {i+1}")
+    # Ingreso de contenido
+    st.write("Enter content:")
+    for i in range(10):  # Solicitar diez bloques de contenido
+        content = st.text_area(f"Content {i+1}")
         content_list.append(content)
         
     prompt = '\n\n'.join(content_list)  # Unir todos los bloques de contenido
@@ -35,8 +33,9 @@ from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from langchain.memory import ConversationBufferMemory
 
-# Generar subtítulos automáticamente
+# Generar subtítulos
 def generate_subtitles(content):
+    # Separar el contenido en párrafos
     paragraphs = content.split('\n\n')
     subtitles = []
     
@@ -63,9 +62,9 @@ if API:
 
 # Generar subtítulos y ensayo
 if prompt and API:
-    suggested_subtitles = generate_subtitles(prompt)
-    st.write("Suggested Subtitles:")
-    for i, subtitle in enumerate(suggested_subtitles):
+    subtitles = generate_subtitles(prompt)
+    st.write("Generated Subtitles:")
+    for i, subtitle in enumerate(subtitles):
         st.write(f"Subtitle {i+1}: {subtitle}")
     
     essay = essay_chain.run(prompt)
