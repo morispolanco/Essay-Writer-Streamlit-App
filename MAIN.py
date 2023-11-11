@@ -42,7 +42,7 @@ if API:
     essay_chain = LLMChain(llm=llm, prompt=essay_template, verbose=True, output_key='essay', memory=essay_memory)
 
 # Show stuff to the screen if there's a prompt
-target_word_count = 2000
+target_word_count = 1000
 
 if prompt and API:
     generated_essay = ""
