@@ -4,7 +4,7 @@ import streamlit as st
 st.set_page_config(page_title='Essay Writer', layout='wide')
 
 with st.sidebar:
-    API = st.text_input("Enter Your OpenAI API", type="password")
+    API=st.text_input("Enter Your OpenAI API", type="password")
     
     if API:
         st.balloons()
@@ -16,45 +16,51 @@ os.environ['OPENAI_API_KEY'] = API
 # App framework
 st.title('🔗 Essay Writer Bot Made using Langchain 🦜')
 if API:
-    subtitle_list = []
-    content_list = []
-    
-    # Ingreso de subtítulos
-    st.write("Enter nine subtitles:")
-    for i in range(9):
-        subtitle = st.text_input(f"Subtitle {i+1}")
-        subtitle_list.append(subtitle)
-
-    # Ingreso de contenido
-    st.write("Enter content for each subtitle:")
-    for subtitle in subtitle_list:
-        content = st.text_area(f"Content for '{subtitle}'")
-        content_list.append(content)
-        
-    prompt = '\n\n'.join([f"{sub}: {content}" for sub, content in zip(subtitle_list, content_list)])
+    prompt = st.text_input('Enter your topic here') 
 else:
     st.warning("Open the sidebar and enter your OpenAI API key")
 
+    
 from langchain.llms import OpenAI
 from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
+from langchain.chains import LLMChain, SequentialChain 
 from langchain.memory import ConversationBufferMemory
+from langchain.utilities import WikipediaAPIWrapper 
 
-# Prompt template
+# Prompt templates
 essay_template = PromptTemplate(
-    input_variables=['topic'],
-    template='write an essay based on the following subtitles:\n{topic}'
+    input_variables = ['topic'], 
+    template='write me an essay on the topic {topic}'
 )
 
-# Memory
+# Memory 
 essay_memory = ConversationBufferMemory(input_key='topic', memory_key='chat_history')
 
-# LLMs
+# Llms
 if API:
     llm = OpenAI(temperature=0.9) 
-    essay_chain = LLMChain(llm=llm, prompt=essay_template, verbose=True, output_key='essay')
+    essay_chain = LLMChain(llm=llm, prompt=essay_template, verbose=True, output_key='essay', memory=essay_memory)
 
-# Generación del ensayo
+# Show stuff to the screen if there's a prompt
+target_word_count = 2000
+
 if prompt and API:
-    essay = essay_chain.run(prompt)
-    st.write(essay)
+    generated_essay = ""
+    while True:
+        essay = essay_chain.run(prompt + generated_essay)
+        word_count = len(essay.split())
+        if word_count > target_word_count:
+            break
+        generated_essay = essay
+    
+    final_essay = " ".join(essay.split()[:target_word_count])
+    st.write(final_essay)
+    st.write(f"Número de palabras en el ensayo: {target_word_count}")
+
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
