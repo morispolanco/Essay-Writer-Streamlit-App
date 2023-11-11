@@ -27,8 +27,6 @@ if API:
         content_list.append(content)
         
     prompt = '\n\n'.join(content_list)  # Unir todos los bloques de contenido
-    
-    word_count = st.number_input("Enter the desired word count for the essay")
 else:
     st.warning("Open the sidebar and enter your OpenAI API key")
 
@@ -68,26 +66,8 @@ if prompt and API:
     suggested_subtitles = generate_subtitles(prompt)
     st.write("Suggested Subtitles:")
     for i, subtitle in enumerate(suggested_subtitles):
-        approved = st.checkbox(f"Approve Subtitle {i+1}: {subtitle}")
-        if not approved:
-            new_subtitle = st.text_input("Enter new subtitle:")
-            suggested_subtitles[i] = new_subtitle if new_subtitle else subtitle
-    
-    st.write("Approved Subtitles:")
-    for i, subtitle in enumerate(suggested_subtitles):
         st.write(f"Subtitle {i+1}: {subtitle}")
     
-    revised_prompt = '\n\n'.join(suggested_subtitles)
-    
-    generated_essay = ""
-    while True:
-        essay = essay_chain.run(revised_prompt + generated_essay)
-        word_count = len(essay.split())
-        if word_count > word_count:
-            break
-        generated_essay = essay
-    
-    final_essay = " ".join(essay.split()[:word_count])
-    
+    essay = essay_chain.run(prompt)
     st.write("Generated Essay:")
-    st.write(final_essay)
+    st.write(essay)
