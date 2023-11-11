@@ -16,15 +16,22 @@ os.environ['OPENAI_API_KEY'] = API
 # App framework
 st.title('🔗 Essay Writer Bot Made using Langchain 🦜')
 if API:
+    subtitle_list = []
     content_list = []
     
+    # Ingreso de subtítulos
+    st.write("Enter nine subtitles:")
+    for i in range(9):
+        subtitle = st.text_input(f"Subtitle {i+1}")
+        subtitle_list.append(subtitle)
+
     # Ingreso de contenido
-    st.write("Enter content:")
-    for i in range(10):  # Solicitar diez bloques de contenido
-        content = st.text_area(f"Content {i+1}")
+    st.write("Enter content for each subtitle:")
+    for subtitle in subtitle_list:
+        content = st.text_area(f"Content for '{subtitle}'")
         content_list.append(content)
         
-    prompt = '\n\n'.join(content_list)  # Unir todos los bloques de contenido
+    prompt = '\n\n'.join([f"{sub}: {content}" for sub, content in zip(subtitle_list, content_list)])
 else:
     st.warning("Open the sidebar and enter your OpenAI API key")
 
@@ -32,19 +39,6 @@ from langchain.llms import OpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from langchain.memory import ConversationBufferMemory
-
-# Generar subtítulos
-def generate_subtitles(content):
-    # Separar el contenido en párrafos
-    paragraphs = content.split('\n\n')
-    subtitles = []
-    
-    for paragraph in paragraphs:
-        # Generar subtítulo para cada párrafo usando el inicio del contenido
-        subtitle = paragraph[:50] if len(paragraph) > 50 else paragraph
-        subtitles.append(subtitle)
-    
-    return subtitles
 
 # Prompt template
 essay_template = PromptTemplate(
@@ -60,13 +54,7 @@ if API:
     llm = OpenAI(temperature=0.9) 
     essay_chain = LLMChain(llm=llm, prompt=essay_template, verbose=True, output_key='essay')
 
-# Generar subtítulos y ensayo
+# Generación del ensayo
 if prompt and API:
-    subtitles = generate_subtitles(prompt)
-    st.write("Generated Subtitles:")
-    for i, subtitle in enumerate(subtitles):
-        st.write(f"Subtitle {i+1}: {subtitle}")
-    
     essay = essay_chain.run(prompt)
-    st.write("Generated Essay:")
     st.write(essay)
