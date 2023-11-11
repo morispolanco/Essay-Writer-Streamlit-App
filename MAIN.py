@@ -4,7 +4,7 @@ import streamlit as st
 st.set_page_config(page_title='Essay Writer', layout='wide')
 
 with st.sidebar:
-    API=st.text_input("Enter Your OpenAI API", type="password")
+    API = st.text_input("Enter Your OpenAI API", type="password")
     
     if API:
         st.balloons()
@@ -16,51 +16,78 @@ os.environ['OPENAI_API_KEY'] = API
 # App framework
 st.title('🔗 Essay Writer Bot Made using Langchain 🦜')
 if API:
-    prompt = st.text_input('Enter your topic here') 
+    num_subtitles = st.number_input("Enter the number of subtitles", min_value=1, max_value=20, value=1)
+    
+    content_list = []
+    
+    # Ingreso de contenido para subtítulos
+    st.write("Enter content for each subtitle:")
+    for i in range(num_subtitles):
+        content = st.text_area(f"Content for Subtitle {i+1}")
+        content_list.append(content)
+        
+    prompt = '\n\n'.join(content_list)  # Unir todos los bloques de contenido
+    
+    word_count = st.number_input("Enter the desired word count for the essay")
 else:
     st.warning("Open the sidebar and enter your OpenAI API key")
 
-    
 from langchain.llms import OpenAI
 from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain, SequentialChain 
+from langchain.chains import LLMChain
 from langchain.memory import ConversationBufferMemory
-from langchain.utilities import WikipediaAPIWrapper 
 
-# Prompt templates
+# Generar subtítulos automáticamente
+def generate_subtitles(content):
+    paragraphs = content.split('\n\n')
+    subtitles = []
+    
+    for paragraph in paragraphs:
+        # Generar subtítulo para cada párrafo usando el inicio del contenido
+        subtitle = paragraph[:50] if len(paragraph) > 50 else paragraph
+        subtitles.append(subtitle)
+    
+    return subtitles
+
+# Prompt template
 essay_template = PromptTemplate(
-    input_variables = ['topic'], 
-    template='write me an essay on the topic {topic}'
+    input_variables=['topic'],
+    template='write an essay based on the following subtitles:\n{topic}'
 )
 
-# Memory 
+# Memory
 essay_memory = ConversationBufferMemory(input_key='topic', memory_key='chat_history')
 
-# Llms
+# LLMs
 if API:
     llm = OpenAI(temperature=0.9) 
-    essay_chain = LLMChain(llm=llm, prompt=essay_template, verbose=True, output_key='essay', memory=essay_memory)
+    essay_chain = LLMChain(llm=llm, prompt=essay_template, verbose=True, output_key='essay')
 
-# Show stuff to the screen if there's a prompt
-target_word_count = 2000
-
+# Generar subtítulos y ensayo
 if prompt and API:
+    suggested_subtitles = generate_subtitles(prompt)
+    st.write("Suggested Subtitles:")
+    for i, subtitle in enumerate(suggested_subtitles):
+        approved = st.checkbox(f"Approve Subtitle {i+1}: {subtitle}")
+        if not approved:
+            new_subtitle = st.text_input("Enter new subtitle:")
+            suggested_subtitles[i] = new_subtitle if new_subtitle else subtitle
+    
+    st.write("Approved Subtitles:")
+    for i, subtitle in enumerate(suggested_subtitles):
+        st.write(f"Subtitle {i+1}: {subtitle}")
+    
+    revised_prompt = '\n\n'.join(suggested_subtitles)
+    
     generated_essay = ""
     while True:
-        essay = essay_chain.run(prompt + generated_essay)
+        essay = essay_chain.run(revised_prompt + generated_essay)
         word_count = len(essay.split())
-        if word_count > target_word_count:
+        if word_count > word_count:
             break
         generated_essay = essay
     
-    final_essay = " ".join(essay.split()[:target_word_count])
+    final_essay = " ".join(essay.split()[:word_count])
+    
+    st.write("Generated Essay:")
     st.write(final_essay)
-    st.write(f"Número de palabras en el ensayo: {target_word_count}")
-
-hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            </style>
-            """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
