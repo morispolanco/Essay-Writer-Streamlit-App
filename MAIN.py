@@ -28,8 +28,6 @@ from langchain.memory import ConversationBufferMemory
 from langchain.utilities import WikipediaAPIWrapper 
 
 # Prompt templates
-
-
 essay_template = PromptTemplate(
     input_variables = ['topic'], 
     template='write me an essay on the topic {topic}'
@@ -44,10 +42,20 @@ if API:
     essay_chain = LLMChain(llm=llm, prompt=essay_template, verbose=True, output_key='essay', memory=essay_memory)
 
 # Show stuff to the screen if there's a prompt
-    if prompt: 
-        essay = essay_chain.run(prompt)
-        st.write(essay) 
-        
+target_word_count = 2000
+
+if prompt and API:
+    generated_essay = ""
+    while True:
+        essay = essay_chain.run(prompt + generated_essay)
+        word_count = len(essay.split())
+        if word_count > target_word_count:
+            break
+        generated_essay = essay
+    
+    final_essay = " ".join(essay.split()[:target_word_count])
+    st.write(final_essay)
+    st.write(f"Número de palabras en el ensayo: {target_word_count}")
 
 hide_streamlit_style = """
             <style>
@@ -55,4 +63,4 @@ hide_streamlit_style = """
             footer {visibility: hidden;}
             </style>
             """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
